@@ -1,34 +1,71 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { useAuthStore } from './store/authStore'
+import Navbar from './components/layout/Navbar'
+import Login from './components/auth/Login'
+import Register from './components/auth/Register'
+import InfluencerHomepage from './components/pages/InfluencerHomepage'
+import BrandHomepage from './components/pages/BrandHomepage'
+import InfluencerDashboard from './components/pages/InfluencerDashboard'
+import BrandDashboard from './components/pages/BrandDashboard'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { user, isAuthenticated } = useAuthStore()
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <Router>
+      <div className="min-h-screen bg-gray-50">
+        {isAuthenticated && <Navbar />}
+        
+        <main>
+          <Routes>
+            {/* Public routes */}
+            <Route 
+              path="/login" 
+              element={!isAuthenticated ? <Login /> : <Navigate to="/homepage" />} 
+            />
+            <Route 
+              path="/register" 
+              element={!isAuthenticated ? <Register /> : <Navigate to="/homepage" />} 
+            />
+            
+            {/* Protected routes */}
+            <Route 
+              path="/homepage" 
+              element={
+                isAuthenticated ? (
+                  user?.role === 'influencer' ? <InfluencerHomepage /> : <BrandHomepage />
+                ) : (
+                  <Navigate to="/login" />
+                )
+              } 
+            />
+            
+            <Route 
+              path="/dashboard" 
+              element={
+                isAuthenticated ? (
+                  user?.role === 'influencer' ? <InfluencerDashboard /> : <BrandDashboard />
+                ) : (
+                  <Navigate to="/login" />
+                )
+              } 
+            />
+            
+            {/* Default redirect */}
+            <Route 
+              path="/" 
+              element={<Navigate to={isAuthenticated ? "/homepage" : "/login"} />} 
+            />
+            
+            {/* Catch all route */}
+            <Route 
+              path="*" 
+              element={<Navigate to={isAuthenticated ? "/homepage" : "/login"} />} 
+            />
+          </Routes>
+        </main>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </Router>
   )
 }
 
