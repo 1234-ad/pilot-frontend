@@ -1,38 +1,60 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 
-export const useAuthStore = create(
-  persist(
-    (set, get) => ({
-      user: null,
-      isAuthenticated: false,
-      
-      login: (userData) => {
-        set({ 
-          user: userData, 
-          isAuthenticated: true 
-        })
-      },
-      
-      logout: () => {
-        set({ 
-          user: null, 
-          isAuthenticated: false 
-        })
-      },
-      
-      updateUser: (userData) => {
-        set({ 
-          user: { ...get().user, ...userData } 
-        })
+// Helper functions for localStorage
+const getStoredAuth = () => {
+  try {
+    const stored = localStorage.getItem('auth-storage')
+    return stored ? JSON.parse(stored) : { user: null, isAuthenticated: false }
+  } catch {
+    return { user: null, isAuthenticated: false }
+  }
+}
+
+const setStoredAuth = (state) => {
+  try {
+    localStorage.setItem('auth-storage', JSON.stringify({
+      user: state.user,
+      isAuthenticated: state.isAuthenticated
+    }))
+  } catch {
+    // Handle localStorage errors silently
+  }
+}
+
+export const useAuthStore = create((set, get) => {
+  // Initialize with stored state
+  const initialState = getStoredAuth()
+  
+  return {
+    user: initialState.user,
+    isAuthenticated: initialState.isAuthenticated,
+    
+    login: (userData) => {
+      const newState = { 
+        user: userData, 
+        isAuthenticated: true 
       }
-    }),
-    {
-      name: 'auth-storage',
-      partialize: (state) => ({ 
-        user: state.user, 
-        isAuthenticated: state.isAuthenticated 
-      })
+      set(newState)
+      setStoredAuth(newState)
+    },
+    
+    logout: () => {
+      const newState = { 
+        user: null, 
+        isAuthenticated: false 
+      }
+      set(newState)
+      setStoredAuth(newState)
+    },
+    
+    updateUser: (userData) => {
+      const currentState = get()
+      const newState = {
+        ...currentState,
+        user: { ...currentState.user, ...userData }
+      }
+      set(newState)
+      setStoredAuth(newState)
     }
-  )
-)
+  }
+})
